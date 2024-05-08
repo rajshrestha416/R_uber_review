@@ -1,0 +1,180 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+install.packages(c("ggplot2", "dplyr", "tidytext", "stringr", "forcats", "broom", "lubridate", "Rcmdr"))
+```
+
+
+
+```{r}
+# Load necessary packages
+library(ggplot2)
+library(dplyr)
+library(tidytext)
+library(stringr)
+library(forcats)
+library(broom)
+library(lubridate)
+```
+```{r}
+# Load the CSV file into a data frame
+uber_reviews <- read.csv("Uber_Customer_Reviews.csv", header = TRUE)
+
+# Check the structure of the data frame
+str(uber_reviews)
+
+# View the first few rows of the data frame
+head(uber_reviews)
+```
+
+
+```{r}
+# Filter the data to include only reviews with ratings less than 3 
+low_ratings <- uber_reviews %>%
+  filter(rating < 3)
+```
+
+
+```{r}
+# Average rating
+average_rating <- mean(uber_reviews$rating)
+```
+
+```{r}
+# Group the data by user_name and calculate the total number of reviews and the average rating per user
+user_summary <- uber_reviews %>%
+  group_by(user_name) %>%
+  summarize(total_reviews = n(), average_rating = mean(rating))
+```
+
+```{r}
+# Sort the data by review_date in descending order
+uber_reviews_sorted <- uber_reviews %>%
+  arrange(desc(review_date))
+```
+
+```{r}
+# Count the number of reviews for each rating
+rating_counts <- table(uber_reviews$rating)
+rating_counts
+```
+
+```{r}
+# hightest thumbs_up reviews
+review_sort_using_thumb_up <- uber_reviews %>%
+  arrange(desc(thumbs_up))
+
+print(review_sort_using_thumb_up)
+```
+
+```{r}
+# Remove rows with missing values
+clean_data <- na.omit(uber_reviews)
+```
+
+```{r}
+
+```
+
+```{r}
+# Plots
+# Rating Distribution
+plot1 <- ggplot(uber_reviews, aes(x = rating)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+  labs(title = "Rating Distribution", x = "Rating", y = "Count")
+plot1
+```
+
+
+```{r}
+# Time Series Analysis
+uber_reviews$review_date <- as.Date(uber_reviews$review_date)
+plot2 <- ggplot(uber_reviews, aes(x = review_date)) +
+  geom_line(stat = "count") +
+  labs(title = "Number of Reviews Over Time", x = "Date", y = "Number of Reviews")
+
+plot2
+```
+
+
+```{r}
+#Top Positive/Negative Reviews
+top_positive_reviews <- uber_reviews %>%
+  filter(rating > 3) %>%
+  arrange(desc(thumbs_up)) %>%
+  head(5)
+
+top_negative_reviews <- uber_reviews %>%
+  filter(rating < 3) %>%
+  arrange(desc(thumbs_up)) %>%
+  head(5)
+
+plot3 <- ggplot(rbind(top_positive_reviews, top_negative_reviews), aes(x = reorder(review_title, -thumbs_up),
+                                                                       y = thumbs_up, fill = as.factor(rating))) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top Positive/Negative Reviews by Thumbs-up Count", x = "Review Title", y = "Thumbs-up Count", fill = "Rating")
+plot3
+```
+
+
+```{r}
+library(Rcmdr)
+```
+
+```{r}
+#Rating vs. Thumbs-up Scatterplot
+plot6 <- ggplot(uber_reviews, aes(x = rating, y = thumbs_up)) +
+  geom_point(alpha = 0.5) +
+  labs(title = "Rating vs. Thumbs-up", x = "Rating", y = "Thumbs-up Count")
+
+print(plot6)
+```
+
+```{r}
+# Load the Bing lexicon
+bing_lexicon <- get_sentiments("bing")
+
+# Perform sentiment analysis by joining Uber reviews with the Bing lexicon
+uber_reviews_sentiment <- inner_join(uber_reviews, bing_lexicon, by = c("review_description" = "word")) %>%
+  count(sentiment) %>%
+  mutate(sentiment = factor(sentiment, levels = c("negative", "neutral", "positive")))
+
+plot5 <- ggplot(uber_reviews_sentiment, aes(x = sentiment, y = n, fill = sentiment)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Sentiment Distribution", x = "Sentiment", y = "Count") +
+  scale_fill_manual(values = c("negative" = "red", "neutral" = "gray", "positive" = "green"))
+
+plot5
+```
+
+```{r}
+# Developer Response Frequency Over Time
+uber_reviews_with_responses <- uber_reviews %>%
+  filter(!is.na(developer_response_date))
+
+plot_developer_response <- ggplot(uber_reviews_with_responses, aes(x = developer_response_date)) +
+  geom_bar(stat = "count", fill = "skyblue", color = "black") +
+  labs(title = "Developer Response Frequency Over Time", x = "Date", y = "Number of Responses")
+
+# Display the plot
+print(plot_developer_response)
+```
+
+```{r}
+# Perform sentiment analysis on review descriptions
+uber_reviews_sentiments <- inner_join(uber_reviews, bing_lexicon, by = c("review_description" = "word"))
+``` 
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

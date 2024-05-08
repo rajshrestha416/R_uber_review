@@ -1,0 +1,34 @@
+<!-- R Commander Markdown Template -->
+
+Replace with Main Title
+=======================
+
+### Raj Shrestha
+
+### `r as.character(Sys.Date())`
+
+```{r echo=FALSE}
+# include this code chunk as-is to set options
+knitr::opts_chunk$set(comment=NA, prompt=TRUE, out.width=750, fig.height=8, fig.width=8)
+library(Rcmdr)
+library(car)
+library(RcmdrMisc)
+```
+
+```{r}
+scatterplot(thumbs_up~rating, regLine=FALSE, smooth=FALSE,
+boxplots=FALSE, data=uber_reviews)
+```
+
+
+### Bar Plot: sentiment
+```{r}
+with(uber_reviews_sentiments, Barplot(sentiment, xlab="sentiment", ylab="Frequency", label.bars=TRUE))
+```
+
+```{r}
+with(uber_reviews, Hist(rating, scale="frequency",
+breaks="Sturges", col="darkgray"))
+```
+
+

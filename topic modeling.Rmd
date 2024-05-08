@@ -1,0 +1,206 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+library(tidytext)
+library(dplyr)
+library(topicmodels)
+library(quanteda)
+```
+
+
+
+```{r}
+# Load the CSV file into a data frame
+uber_reviews <- read.csv("Uber_Customer_Reviews.csv", header = TRUE)
+ola_reviews <- read.csv("Ola_Customer_Reviews.csv", header = TRUE)
+
+# Check the structure of the data frame
+str(uber_reviews)
+str(ola_reviews)
+```
+```{r}
+summary(uber_reviews)
+summary(ola_reviews)
+```
+
+
+```{r}
+#Rating Count
+uber_rating_counts <- table(uber_reviews$review)
+ola_rating_counts <- table(ola_reviews$rating)
+uber_rating_counts
+ola_rating_counts
+```
+
+
+```{r}
+# hightest thumbs_up reviews
+#Uber
+# Filter for reviews with a rating of 5
+top_comments_5 <- uber_reviews[uber_reviews$rating == 5, ]
+
+# Filter for reviews with a rating of 1
+top_comments_1 <- uber_reviews[uber_reviews$rating == 1, ]
+
+# Sort the data frames by thumbs up count in descending order
+top_comments_5 <- top_comments_5[order(-top_comments_5$thumbs_up), ]
+top_comments_1 <- top_comments_1[order(-top_comments_1$thumbs_up), ]
+
+# Select the top 5 comments and thumbs up counts for each rating
+top_5_comments_thumbs_up_5 <- top_comments_5[1:5, c("review_description", "thumbs_up")]
+top_5_comments_thumbs_up_1 <- top_comments_1[1:5, c("review_description", "thumbs_up")]
+
+# Print the top 5 comments and thumbs up counts for each rating
+print("Top 5 comments with thumbs up count for rating 5:")
+print(top_5_comments_thumbs_up_5)
+
+print("Top 5 comments with thumbs up count for rating 1:")
+print(top_5_comments_thumbs_up_1)
+```
+
+
+```{r}
+# hightest thumbs_up reviews
+#OLA
+# Filter for reviews with a rating of 5
+top_comments_5 <- ola_reviews[ola_reviews$rating == 5, ]
+
+# Filter for reviews with a rating of 1
+top_comments_1 <- ola_reviews[ola_reviews$rating == 1, ]
+
+# Sort the data frames by thumbs up count in descending order
+top_comments_5 <- top_comments_5[order(-top_comments_5$thumbs_up), ]
+top_comments_1 <- top_comments_1[order(-top_comments_1$thumbs_up), ]
+
+# Select the top 5 comments and thumbs up counts for each rating
+top_5_comments_thumbs_up_5 <- top_comments_5[1:5, c("review_description", "thumbs_up")]
+top_5_comments_thumbs_up_1 <- top_comments_1[1:5, c("review_description", "thumbs_up")]
+
+# Print the top 5 comments and thumbs up counts for each rating
+print("Top 5 comments with thumbs up count for rating 5:")
+print(top_5_comments_thumbs_up_5)
+
+print("Top 5 comments with thumbs up count for rating 1:")
+print(top_5_comments_thumbs_up_1)
+```
+
+```{r}
+# Distribution Comparision of Ratings
+p_ola <- ggplot(ola_reviews, aes(x = rating)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+  labs(title = "Ola Rating Distribution", x = "Rating", y = "Count")
+
+p_uber <- ggplot(uber_reviews, aes(x = rating)) +
+  geom_histogram(binwidth = 1, fill = "lightgreen", color = "black") +
+  labs(title = "Uber Rating Distribution", x = "Rating", y = "Count")
+
+# Combine the plots
+plot_combined <- grid.arrange(p_ola, p_uber, ncol = 2)
+
+# Print the combined plot
+print(plot_combined)
+```
+```{r}
+#Temporal Analysis (Time Series Analysis)
+ola_reviews$review_date <- as.Date(ola_reviews$review_date)
+plot_line_ola <- ggplot(ola_reviews, aes(x = review_date)) +
+  geom_line(stat = "count") +
+  labs(title = "(OLA) Number of Reviews Over Time", x = "Date", y = "Number of Reviews")
+
+uber_reviews$review_date <- as.Date(uber_reviews$review_date)
+plot_line_uber <- ggplot(uber_reviews, aes(x = review_date)) +
+  geom_line(stat = "count") +
+  labs(title = "(UBER) Number of Reviews Over Time", x = "Date", y = "Number of Reviews")
+
+plot_line_ola
+plot_line_uber
+
+# Combine the plots
+plot_line_combined <- grid.arrange(plot_line_ola, plot_line_uber, ncol=1)
+```
+
+```{r}
+#Topic Modeling
+#Uber
+#Pre-process
+uber_clean_reviews <- uber_reviews %>%
+   mutate(review_description = tolower(review_description)) %>%
+  unnest_tokens(word, review_description) %>%
+  anti_join(stop_words)
+
+
+# Document-Term Matrix
+uber_word_counts_dtm = uber_clean_reviews %>% count(review_id, word) %>% cast_dfm(review_id, word, n)
+uber_word_counts_dtm
+```
+```{r}
+#OLa
+#Pre-process
+ola_clean_reviews <- ola_reviews %>%
+   mutate(review_description = tolower(review_description)) %>%
+  unnest_tokens(word, review_description) %>%
+  anti_join(stop_words)
+
+
+# Document-Term Matrix
+ola_word_counts_dtm = ola_clean_reviews %>% count(review_id, word) %>% cast_dfm(review_id, word, n)
+ola_word_counts_dtm
+```
+
+
+```{r}
+# check the top features
+print("Uber 20 Top Words")
+topfeatures(uber_word_counts_dtm, n = 20, scheme = "docfreq")
+
+print("Ola 20 Top Words")
+topfeatures(ola_word_counts_dtm, n = 20, scheme = "docfreq")
+```
+```{r}
+# Topic Model Training
+lda_model_uber <- LDA(uber_word_counts_dtm, k = 5)
+lda_model_ola <- LDA(ola_word_counts_dtm, k = 5)
+```
+
+
+```{r}
+# Word-topic probabilities
+
+```
+
+
+```{r}
+uber_topics <- tidy(l)
+```
+```{r}
+#interpret topic
+topics_uber <- tidy(lda_model, matrix = "beta")
+top_terms_uber <- topics_uber %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  arrange(topic, -beta)
+print(top_terms_uber)
+```
+
+```{r}
+topic_distribution_uber <- tidy(lda_model, matrix = "gamma")
+#colnames(topic_distribution)[4] <- "company_name"
+print(topic_distribution_uber)
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
