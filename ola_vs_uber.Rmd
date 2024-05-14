@@ -12,6 +12,7 @@ library(ggplot2)
 library(gridExtra)
 library(tidytext)
 library(dplyr)
+library(syuzhet)
 library(topicmodels)
 library(quanteda)
 library(wordcloud)
@@ -336,6 +337,114 @@ ola_word_counts %>%
   facet_wrap(~sentiment, scales = "free_y") +
   labs(x = "OLA Contribution to sentiment",
        y = NULL)
+```
+
+
+```{r}
+#Thumbs Up Analysis
+#Uber
+correlation_rating_uber <- cor(uber_reviews_sentiments$thumbs_up, uber_reviews_sentiments$rating, use = "complete.obs")
+print(paste("Correlation between thumbs_up and rating: ", correlation_rating_uber))
+
+```
+```{r}
+# Scatter plot for correlation between thumbs up counts and review ratings
+uber_thumbs_up_rating_plot <- ggplot(uber_reviews, aes(x = rating, y = thumbs_up)) +
+  geom_point(alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Uber Correlation between Thumbs Up Counts and Review Ratings", x = "Thumbs Up Counts", y = "Review Ratings")
+
+print(uber_thumbs_up_rating_plot)
+```
+
+
+
+```{r}
+#Aggregate thumbs_up by sentiment
+uber_thumbs_up_sentiment <- uber_reviews_sentiments %>%
+    group_by(sentiment) %>%
+    summarise(average_thumbs_up = mean(thumbs_up, na.rm = TRUE))
+```
+
+```{r}
+# Plot thumbs up by sentiment
+uber_thumbs_up_sentiment_plot <- thumbs_up_sentiment %>%
+  ggplot(aes(x = sentiment, y = average_thumbs_up)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Uber Average Thumbs Up by Sentiment", x = "Sentiment", y = "Average Thumbs Up")
+
+print(thumbs_up_sentiment_plot)
+```
+```{r}
+# Correlation between thumbs up counts and review length
+uber_reviews$review_length <- nchar(uber_reviews$review_description)
+correlation_length <- cor(uber_reviews$thumbs_up, uber_reviews$review_length, use = "complete.obs")
+print(paste("Uber Correlation between thumbs_up and review length: ", correlation_length))
+```
+```{r}
+# Scatter plot for correlation between thumbs up counts and review length
+uber_thumbs_up_length_plot <- ggplot(uber_reviews, aes(x = thumbs_up, y = nchar(review_description))) +
+  geom_point(alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Uber Correlation between Thumbs Up Counts and Review Length", x = "Thumbs Up Counts", y = "Review Length")
+
+print(thumbs_up_length_plot)
+```
+
+```{r}
+#Ola
+correlation_rating_ola <- cor(ola_reviews_sentiments$thumbs_up, ola_reviews_sentiments$rating, use = "complete.obs")
+print(paste("Ola Correlation between thumbs_up and rating: ", correlation_rating_ola))
+```
+```{r}
+# Scatter plot for correlation between thumbs up counts and review ratings
+ola_thumbs_up_rating_plot <- ggplot(ola_reviews, aes(x = rating, y = thumbs_up)) +
+  geom_point(alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Ola Correlation between Thumbs Up Counts and Review Ratings", x = "Thumbs Up Counts", y = "Review Ratings")
+
+print(ola_thumbs_up_rating_plot)
+```
+
+```{r}
+#Aggregate thumbs_up by sentiment
+ola_thumbs_up_sentiment <- ola_reviews_sentiments %>%
+    group_by(sentiment) %>%
+    summarise(average_thumbs_up = mean(thumbs_up, na.rm = TRUE))
+```
+
+```{r}
+# Plot thumbs up by sentiment
+ola_thumbs_up_sentiment_plot <- ola_thumbs_up_sentiment %>%
+  ggplot(aes(x = sentiment, y = average_thumbs_up)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Ola Average Thumbs Up by Sentiment", x = "Sentiment", y = "Average Thumbs Up")
+
+print(ola_thumbs_up_sentiment_plot)
+```
+
+```{r}
+# Combine the plots
+ grid.arrange(uber_thumbs_up_sentiment_plot, ola_thumbs_up_sentiment_plot, ncol = 2) 
+```
+
+```{r}
+# Correlation between thumbs up counts and review length
+ola_reviews$review_length <- nchar(ola_reviews$review_description)
+correlation_length <- cor(ola_reviews$thumbs_up, ola_reviews$review_length, use = "complete.obs")
+print(paste("Ola Correlation between thumbs_up and review length: ", correlation_length))
+```
+
+```{r}
+# Scatter plot for correlation between thumbs up counts and review length
+ola_thumbs_up_length_plot <- ggplot(ola_reviews, aes(x = thumbs_up, y = nchar(review_description))) +
+  geom_point(alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Ola Correlation between Thumbs Up Counts and Review Length", x = "Thumbs Up Counts", y = "Review Length")
+
+print(ola_thumbs_up_length_plot)
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
